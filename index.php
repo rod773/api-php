@@ -16,27 +16,54 @@ $request = $_SERVER['REQUEST_URI'];
 
 $parts = explode("/", $request);
 
-
-$route = $parts[2];
+$parts = array_filter($parts);
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 
 
-if ($route !== 'users') : {
+
+
+if (sizeof($parts) < 2) : {
         echo json_encode([
             "status" => 404,
             "error" => "Page Not Found"
         ]);
+        exit;
     }
 
+elseif ($parts[2] !== 'users' || sizeof($parts) > 2) : {
+        echo json_encode([
+            "status" => 404,
+            "error" => "Page Not Found"
+        ]);
+        exit;
+    }
+
+
 else :
+    $route = $parts[2];
+
     $users = new Users;
 
     switch ($method) {
         case 'GET':
             $users->selectAll();
             break;
+        case 'POST':
+            $users->insert();
+            break;
+        case 'PUT':
+            $users->update();
+            break;
+        case 'DELETE':
+            $users->delete();
+            break;
+        default:
+            echo json_encode([
+                "status" => 404,
+                "error" => "Method Not Alloweb"
+            ]);
     }
 
 

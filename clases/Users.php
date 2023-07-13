@@ -20,48 +20,35 @@ class Users
     public function selectAll()
     {
 
-        $method = $_SERVER['REQUEST_METHOD'];
 
-        if ($method !== 'GET') :
 
-            echo json_encode([
-                "status" => 404,
-                "message" => "Method Not Alowed"
-            ]);
+        $sql = "select * from usuarios";
 
-            exit;
+        $query = $this->conn->prepare($sql);
 
-        else :
+        $query->execute();
 
-            $sql = "select * from usuarios";
+        $data = $query->fetchAll();
 
-            $query = $this->conn->prepare($sql);
+        $array = [];
 
-            $query->execute();
-
-            $data = $query->fetchAll();
-
-            $array = [];
-
-            foreach ($data as $row) {
-                $array[] = [
-                    "id" => $row['id'],
-                    "name" => $row['nombre'],
-                    "email" => $row['correo'],
-                    "phone" => $row['telefono'],
-                    "status" => $row['status'],
-                    "rol" => $row['rol_id'],
-                ];
-            }
+        foreach ($data as $row) {
+            $array[] = [
+                "id" => $row['id'],
+                "name" => $row['nombre'],
+                "email" => $row['correo'],
+                "phone" => $row['telefono'],
+                "status" => $row['status'],
+                "rol" => $row['rol_id'],
+            ];
+        }
 
 
 
-            echo json_encode([
-                "total rows" => $query->rowCount(),
-                "rows" => $array,
-            ]);
-
-        endif;
+        echo json_encode([
+            "total rows" => $query->rowCount(),
+            "rows" => $array,
+        ]);
     }
 
 
@@ -117,7 +104,7 @@ class Users
 
         $query->bindValue(":name", $name, PDO::PARAM_STR);
         $query->bindValue(":phone", $phone, PDO::PARAM_INT);
-        $query->bindValue(":password", $password, PDO::PARAM_STR);
+        $query->bindValue(":password", password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);
         $query->bindValue(":email", $email, PDO::PARAM_STR);
 
 
@@ -142,7 +129,7 @@ class Users
             ];
         }
 
-        json_encode($array);
+        echo json_encode($array);
     }
 
 
@@ -197,7 +184,7 @@ class Users
             ];
         }
 
-        json_encode($array);
+        echo json_encode($array);
     }
 
 
@@ -207,23 +194,16 @@ class Users
 
         $request_data = json_decode(file_get_contents("php://input"));
 
-        $method = $_SERVER['REQUEST_METHOD'];
+
 
         if ($request_data) {
             $id = $request_data->id;
         }
 
 
-        if ($method !== 'DELETE') :
 
-            echo json_encode([
-                "status" => 404,
-                "message" => "Method Not Alowed"
-            ]);
 
-            exit;
-
-        elseif (empty($id)) :
+        if (empty($id) || !is_numeric($id)) :
 
             echo json_encode([
                 "status" => 404,
