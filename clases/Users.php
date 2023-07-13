@@ -20,7 +20,14 @@ class Users
     public function selectAll()
     {
 
-
+        if (!$this->validateToken()) {
+            echo json_encode([
+                "status" => 404,
+                "error" => 'Unauthorized',
+                "status" => "error"
+            ]);
+            exit;
+        }
 
         $sql = "select * from usuarios";
 
@@ -56,6 +63,15 @@ class Users
 
     public function selectOne($id)
     {
+
+        if (!$this->validateToken()) {
+            echo json_encode([
+                "status" => 404,
+                "error" => 'Unauthorized',
+                "status" => "error"
+            ]);
+            exit;
+        }
 
 
         $sql = "select * from usuarios where id = :id";
@@ -103,6 +119,14 @@ class Users
     public function insert()
     {
 
+        if (!$this->validateToken()) {
+            echo json_encode([
+                "status" => 404,
+                "error" => 'Unauthorized',
+                "status" => "error"
+            ]);
+            exit;
+        }
 
         $request_data = json_decode(file_get_contents("php://input"), true);
 
@@ -184,6 +208,15 @@ class Users
 
     public function update()
     {
+        if (!$this->validateToken()) {
+            echo json_encode([
+                "status" => 404,
+                "error" => 'Unauthorized',
+                "status" => "error"
+            ]);
+            exit;
+        }
+
 
         $request_data = json_decode(file_get_contents("php://input"), true);
 
@@ -238,6 +271,15 @@ class Users
     //**********************************************
     public function delete()
     {
+
+        if (!$this->validateToken()) {
+            echo json_encode([
+                "status" => 404,
+                "error" => 'Unauthorized',
+                "status" => "error"
+            ]);
+            exit;
+        }
 
         $request_data = json_decode(file_get_contents("php://input"));
 
