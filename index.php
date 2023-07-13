@@ -20,7 +20,7 @@ $parts = array_filter($parts);
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-
+$users = new Users;
 
 
 
@@ -32,10 +32,31 @@ if (sizeof($parts) < 2) : {
         exit;
     }
 
-elseif ($parts[2] === 'users' && sizeof($parts) == 2) : {
-        $route = $parts[2];
+elseif ($parts[2] === 'users' && isset($parts[3])) :
 
-        $users = new Users;
+    if ($method === 'GET') : {
+            if (is_numeric($parts[3])) :
+                $id = $parts[3];
+                $users->selectOne($id);
+            else :
+                echo json_encode([
+                    "status" => 404,
+                    "error" => "Id is Not Numeric"
+                ]);
+                exit;
+            endif;
+        }
+    else :
+        echo json_encode([
+            "status" => 404,
+            "error" => "Method Not Alloweb"
+        ]);
+        exit;
+    endif;
+
+
+elseif ($parts[2] === 'users' && sizeof($parts) == 2) : {
+
 
         switch ($method) {
             case 'GET':

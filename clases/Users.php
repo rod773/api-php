@@ -64,24 +64,39 @@ class Users
 
         $query->bindValue(":id", $id, PDO::PARAM_INT);
 
+
+        try {
+        } catch (PDOException $e) {
+            echo json_encode([
+                "error" => $e->getMessage()
+            ]);
+        }
         $query->execute();
 
         $data = $query->fetch();
 
+        if ($data) : {
+                $array = [
+                    "id" => $data['id'],
+                    "name" => $data['nombre'],
+                    "email" => $data['correo'],
+                    "phone" => $data['telefono'],
+                    "status" => $data['status'],
+                    "rol" => $data['rol_id'],
+                ];
 
-        $array = [
-            "id" => $data['id'],
-            "name" => $data['nombre'],
-            "email" => $data['correo'],
-            "phone" => $data['telefono'],
-            "status" => $data['status'],
-            "rol" => $data['rol_id'],
-        ];
+                echo json_encode($array);
+            }
 
+        else :
 
+            echo json_encode([
+                "status" => 404,
+                "error" => "Id Not Found"
+            ]);
+            exit;
 
-
-        json_encode($array);
+        endif;
     }
 
     //*************************************** */
