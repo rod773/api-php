@@ -32,39 +32,40 @@ if (sizeof($parts) < 2) : {
         exit;
     }
 
-elseif ($parts[2] !== 'users' || sizeof($parts) > 2) : {
-        echo json_encode([
-            "status" => 404,
-            "error" => "Page Not Found"
-        ]);
-        exit;
+elseif ($parts[2] === 'users' && sizeof($parts) == 2) : {
+        $route = $parts[2];
+
+        $users = new Users;
+
+        switch ($method) {
+            case 'GET':
+                $users->selectAll();
+                break;
+            case 'POST':
+                $users->insert();
+                break;
+            case 'PUT':
+                $users->update();
+                break;
+            case 'DELETE':
+                $users->delete();
+                break;
+            default:
+                echo json_encode([
+                    "status" => 404,
+                    "error" => "Method Not Alloweb"
+                ]);
+        }
     }
+
+
+elseif ($parts[2] === 'auth' && sizeof($parts) == 2) :
 
 
 else :
-    $route = $parts[2];
-
-    $users = new Users;
-
-    switch ($method) {
-        case 'GET':
-            $users->selectAll();
-            break;
-        case 'POST':
-            $users->insert();
-            break;
-        case 'PUT':
-            $users->update();
-            break;
-        case 'DELETE':
-            $users->delete();
-            break;
-        default:
-            echo json_encode([
-                "status" => 404,
-                "error" => "Method Not Alloweb"
-            ]);
-    }
-
+    echo json_encode([
+        "status" => 404,
+        "error" => "Page Not Found"
+    ]);
 
 endif;
