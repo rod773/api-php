@@ -106,45 +106,77 @@ class Users
 
         $request_data = json_decode(file_get_contents("php://input"), true);
 
-        $name = $request_data['name'];
-        $phone = $request_data['phone'];
-        $password = $request_data['password'];
-        $email = $request_data['email'];
+
+        if ($request_data) :
+
+            $name = $request_data['name'];
+            $phone = $request_data['phone'];
+            $password = password_hash(
+                $request_data['password'],
+                PASSWORD_DEFAULT
+
+            );
+            $email = $request_data['email'];
+
+        else :
+
+            echo json_encode([
+                "error" => "No request data body",
+                "status" => 404
+            ]);
+
+        endif;
+
+        if (
+            isset($name)
+            && isset($phone)
+            && isset($password)
+            && isset($email)
+
+        ) :
+
+            $sql = "insert into spending_tracker.usuarios (correo,password,telefono,nombre) values (:email,:password,:phone,:name)";
+
+            $query = $this->conn->prepare($sql);
+
+            $query->bindValue(":name", $name, PDO::PARAM_STR);
+            $query->bindValue(":phone", $phone, PDO::PARAM_INT);
+            $query->bindValue(":password", $password, PDO::PARAM_STR);
+            $query->bindValue(":email", $email, PDO::PARAM_STR);
 
 
 
-        $sql = "insert into spending_tracker.usuarios (correo,password,telefono,nombre) values (:email,:password,:phone,:name)";
-
-        $query = $this->conn->prepare($sql);
-
-        $query->bindValue(":name", $name, PDO::PARAM_STR);
-        $query->bindValue(":phone", $phone, PDO::PARAM_INT);
-        $query->bindValue(":password", password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);
-        $query->bindValue(":email", $email, PDO::PARAM_STR);
-
-
-
-        $array = [
-            "error" => "error al insertar",
-            "status" => "error"
-        ];
-
-        if ($query->execute()) {
             $array = [
-                $data = [
-                    "id" => $this->conn->lastInsertId(),
-                    "name" => $name,
-                    "phone" => $phone,
-                    "password" => $password,
-                    "email" => $email,
-                ],
-
-                "status" => "success"
-
+                "error" => "error al insertar",
+                "status" => "error"
             ];
-        }
 
-        echo json_encode($array);
+            if ($query->execute()) {
+                $array = [
+                    $data = [
+                        "id" => $this->conn->lastInsertId(),
+                        "name" => $name,
+                        "phone" => $phone,
+                        "password" => $password,
+                        "email" => $email,
+                    ],
+
+                    "status" => "success"
+
+                ];
+            }
+
+            echo json_encode($array);
+
+
+        else :
+
+            echo json_encode([
+                "error" => "Missing some in data body",
+                "status" => 404
+            ]);
+
+        endif;
     }
 
 
@@ -265,12 +297,12 @@ class Users
     public function auth()
     {
 
-        $request_data = json_decode(file_get_contents("php://input"), true);
+        $request_data = json_decode(file_get_contents("php://input"));
 
         if ($request_data) :
-            $password = $request_data['password'];
-            $email = $request_data['email'];
-            $id = $request_data['id'];
+            $password = $request_data->password;
+            $email = $request_data->email;
+
         else :
             echo json_encode([
                 "error" => "Missing request data"
@@ -278,17 +310,13 @@ class Users
             exit;
         endif;
 
-        if (isset($password) && isset($email) && isset($id)) :
+        if (isset($password) && isset($email)) :
 
-            $sql = "select * from spending_tracker.usuarios where  correo = :email and password = :password";
+
+            $sql = "select * from spending_tracker.usuarios where  correo = :email";
 
             $query = $this->conn->prepare($sql);
 
-            $query->bindValue(
-                ":password",
-                $password,
-                PDO::PARAM_STR
-            );
             $query->bindValue(":email", $email, PDO::PARAM_STR);
 
 
@@ -301,22 +329,35 @@ class Users
 
                 $user = $query->fetch();
 
-                $now = strtotime('now');
 
-                $key = $_ENV['JWT_SECRET_KEY'];
+                // echo json_encode([
+                //     "password" => $password,
+                //     "db_pass" => $user['password'],
+                //     "res" => password_verify($password, $user['password'])
+                // ]);
 
-                $payload = [
-                    'exp' => $now + 3600,
-                    'data' => $id,
+                // exit;
+                if (password_verify($password, $user['password'])) :
 
-                ];
+                    $id = $user['id'];
+
+                    $now = strtotime('now');
+
+                    $key = $_ENV['JWT_SECRET_KEY'];
+
+                    $payload = [
+                        'exp' => $now + 3600,
+                        'data' => $id,
+
+                    ];
 
 
-                $jwt = JWT::encode($payload, $key, 'HS256');
+                    $jwt = JWT::encode($payload, $key, 'HS256');
 
-                $array = [
-                    "token" => $jwt
-                ];
+                    $array = [
+                        "token" => $jwt
+                    ];
+                endif;
             }
 
             echo json_encode($array);
