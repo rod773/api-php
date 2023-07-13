@@ -82,6 +82,16 @@ elseif ($parts[2] === 'users' && sizeof($parts) == 2) : {
 
 elseif ($parts[2] === 'auth' && sizeof($parts) == 2) :
 
+    if ($method === 'GET') :
+
+        $users->auth();
+    else :
+
+        echo json_encode([
+            "status" => 404,
+            "error" => "Method Not Allowed"
+        ]);
+    endif;
 
 else :
     echo json_encode([

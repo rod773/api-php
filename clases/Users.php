@@ -260,4 +260,115 @@ class Users
     }
 
     //************************************************* */
+
+
+    public function auth()
+    {
+
+        $request_data = json_decode(file_get_contents("php://input"), true);
+
+        if ($request_data) :
+            $password = $request_data['password'];
+            $email = $request_data['email'];
+            $id = $request_data['id'];
+        else :
+            echo json_encode([
+                "error" => "Missing request data"
+            ]);
+            exit;
+        endif;
+
+        if (isset($password) && isset($email) && isset($id)) :
+
+            $sql = "select * from spending_tracker.usuarios where  correo = :email and password = :password";
+
+            $query = $this->conn->prepare($sql);
+
+            $query->bindValue(
+                ":password",
+                $password,
+                PDO::PARAM_STR
+            );
+            $query->bindValue(":email", $email, PDO::PARAM_STR);
+
+
+            $array = [
+                "error" => "no se pudo validad identidad",
+                "status" => "error"
+            ];
+
+            if ($query->execute()) {
+
+                $user = $query->fetch();
+
+                $now = strtotime('now');
+
+                $key = $_ENV['JWT_SECRET_KEY'];
+
+                $payload = [
+                    'exp' => $now + 3600,
+                    'data' => $id,
+
+                ];
+
+
+                $jwt = JWT::encode($payload, $key, 'HS256');
+
+                $array = [
+                    "token" => $jwt
+                ];
+            }
+
+            echo json_encode($array);
+
+        else :
+            echo json_encode([
+                "error" => "Missing request data"
+            ]);
+            exit;
+
+        endif;
+    }
+
+    //******************************************** */
+
+    public function getToken()
+    {
+        $headers = apache_request_headers();
+        if (!isset($headers['Authorization'])) {
+            echo json_encode([
+                "error" => "Unauthenticated request",
+                "status" => 403
+            ]);
+            exit;
+        }
+        $authorization = $headers["Authorization"];
+        $authorizationArray = explode(" ", $authorization);
+        $token = $authorizationArray[1];
+        $key = $_ENV['JWT_SECRET_KEY'];
+
+        try {
+            return JWT::decode($token, new Key($key, 'HS256'));
+        } catch (Throwable $th) {
+            echo json_encode([
+                "error" => $th->getMessage(),
+                "status" => "403"
+            ]);
+            exit;
+        }
+    }
+
+    //************************************************ */
+
+    public function validateToken()
+    {
+        $info = $this->getToken();
+
+        $sql = "select * from usuarios where id = :id";
+        $query = $this->conn->prepare($sql);
+        $query->bindValue(":id", $info->data, PDO::PARAM_INT);
+        $query->execute();
+        $rows = $query->fetchColumn();
+        return $rows;
+    }
 }
